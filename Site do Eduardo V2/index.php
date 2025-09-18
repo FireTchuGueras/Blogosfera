@@ -1,3 +1,35 @@
+<?php
+session_start();
+include("conexao.php");
+
+$limite = 3; // blogs por página
+$pagina = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($pagina - 1) * $limite;
+
+$sql = "SELECT b.id, b.titulo, b.descricao, b.imagem, b.slug, u.name AS autor_nome
+        FROM blogs b
+        JOIN users u ON b.autor_id = u.id
+        ORDER BY b.data_publicacao DESC
+        LIMIT $limite OFFSET $offset";
+$result = mysqli_query($conexao, $sql);
+$blogs = [];
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $blogs[] = $row;
+    }
+}
+
+$sql_total = "SELECT COUNT(*) as total FROM blogs";
+$res_total = mysqli_query($conexao, $sql_total);
+$total_blogs = 0;
+if ($res_total) {
+    $row_total = mysqli_fetch_assoc($res_total);
+    $total_blogs = (int)$row_total['total'];
+}
+
+$tem_mais = $pagina * $limite < $total_blogs;
+?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
   <head>
@@ -57,7 +89,7 @@
 
             <li class="nav-item">
               <a
-                href="registro.php"
+                href="login.php"
                 class="btn btn-primary rounded-pill btn-sm ms-3"
                 id="login-btn"
               >
@@ -90,7 +122,7 @@
             </h5>
             <div data-aos="fade-up" data-aos-delay="50">
               <a
-                href="login.html"
+                href="login.php"
                 class="btn btn-brand rounded-pill btn-sm me-3"
                 >Vamos lá</a
               >
@@ -210,61 +242,37 @@
           </div>
         </div>
         <div class="row">
-          <div class="col-md-4" data-aos="fade-down" data-aos-delay="150">
-            <div class="image-zoom">
-              <div class="image-zoom-wrapper">
-                <img src="./assets/images/Blog1.jpg" alt="Dia a Dia" />
+          <?php if (!empty($blogs)): ?>
+            <?php foreach ($blogs as $blog): ?>
+              <div class="col-md-4" data-aos="fade-down" data-aos-delay="150">
+                <div class="image-zoom">
+                  <div class="image-zoom-wrapper">
+                    <img src="<?= htmlspecialchars($blog['imagem']) ?>" alt="<?= htmlspecialchars($blog['titulo']) ?>" />
+                  </div>
+                  <h5 class="mt-4"><?= htmlspecialchars($blog['titulo']) ?></h5>
+                  <p>
+                    <?= nl2br(htmlspecialchars($blog['descricao'])) ?>
+                  </p>
+                  <p><small>Escrito por: <?= htmlspecialchars($blog['autor_nome']) ?></small></p>
+                  <a href="blog.php?slug=<?= urlencode($blog['slug']) ?>">Leia Mais</a>
+                </div>
               </div>
-              <h5 class="mt-4">Os Segredos da Produtividade no Dia a Dia</h5>
-              <p>
-                Técnicas simples para organizar sua rotina e aumentar sua
-                produtividade.
-              </p>
-              <a href="blog1.html">Leia Mais</a>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <div class="text-center mt-5" data-aos="fade-down" data-aos-delay="35-">
+            <p class="text-center">Nenhum blog encontrado.</p>
             </div>
-          </div>
-          <div class="col-md-4" data-aos="fade-down" data-aos-delay="250">
-            <div class="image-zoom">
-              <div class="image-zoom-wrapper">
-                <img src="./assets/images/Blog2.jpg" alt="Imagem da IA" />
-              </div>
-              <h5 class="mt-4">
-                Inteligência Artificial: Como Ela Está Transformando o Mundo
-              </h5>
-              <p>
-                Descubra como a IA está impactando diferentes setores e o que
-                esperar do futuro.
-              </p>
-              <a href="#">Leia Mais</a>
-            </div>
-          </div>
-          <div class="col-md-4" data-aos="fade-down" data-aos-delay="350">
-            <div class="team-member image-zoom">
-              <div class="image-zoom-wrapper">
-                <img src="./assets/images/Blog3.jpg" alt="Viagem" />
-              </div>
-              <h5 class="mt-4">
-                Viagem dos Sonhos: Destinos Incríveis para Conhecer em 2025
-              </h5>
-              <p>
-                Uma seleção de lugares imperdíveis para sua próxima aventura!
-              </p>
-              <a href="#">Leia Mais</a>
-            </div>
-          </div>
+          <?php endif; ?>
         </div>
       </div>
 
- <!-- Botão Veja Mais -->
- <div class="text-center mt-5" 
-    data-aos="fade-down" 
-    data-aos-delay="35-">
-    <a href="#" class="btn btn-primary d-inline-flex align-items-center rounded-5">
-      Veja Mais
-    </a>
-  </div>
-</div>
-</section>
+      <!-- Botão Veja Mais -->
+      <div class="text-center mt-5" data-aos="fade-down" data-aos-delay="35-">
+        <a href="#" class="btn btn-primary d-inline-flex align-items-center rounded-5">
+          Veja Mais
+        </a>
+      </div>
+    </section>
 
     <!-- FOOTER -->
     <footer class="bg-dark">
